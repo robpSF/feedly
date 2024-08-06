@@ -40,16 +40,24 @@ def get_boards(access_token):
         'Authorization': f'OAuth {access_token}'
     }
     response = requests.get(f'{API_URL}/collections', headers=headers)
-    boards = response.json()
-    return boards
+    if response.status_code == 200:
+        boards = response.json()
+        return boards
+    else:
+        st.error(f"Error fetching boards: {response.status_code} - {response.text}")
+        return []
 
 def get_articles(access_token, board_id):
     headers = {
         'Authorization': f'OAuth {access_token}'
     }
     response = requests.get(f'{API_URL}/streams/contents', headers=headers, params={'streamId': board_id})
-    articles = response.json().get('items', [])
-    return articles
+    if response.status_code == 200:
+        articles = response.json().get('items', [])
+        return articles
+    else:
+        st.error(f"Error fetching articles: {response.status_code} - {response.text}")
+        return []
 
 # Streamlit UI
 st.title("Feedly Board and Articles Viewer")
@@ -64,14 +72,25 @@ if access_token:
     st.write("Fetching boards...")
     boards = get_boards(access_token)
 
-    board_titles = [board['title'] for board in boards]
-    selected_board_title = st.selectbox("Select a board:", board_titles)
+    if boards:
+        st.write("Boards fetched successfully.")
+        st.write("Debug info: ", boards)  # Add this line to debug the structure of the boards
 
-    selected_board = next(board for board in boards if board['title'] == selected_board_title)
-    st.write(f"Fetching articles from board: {selected_board['title']}")
-    
-    articles = get_articles(access_token, selected_board['id'])
+        board_titles = [board.get('title', 'No Title') for board in boards]
+        selected_board_title = st.selectbox("Select a board:", board_titles)
 
-    st.write("Articles:")
-    for article in articles:
-        st.write(f"- [{article['title']}]({article.get('alternate', [{}])[0].get('href', '')})")
+        selected_board = next((board for board in boards if board.get('title') == selected_board_title), None)
+        
+        if selected_board:
+            st.write(f"Fetching articles from board: {selected_board.get('title', 'No Title')}")
+            articles = get_articles(access_token, selected_board.get('id'))
+
+            st.write("Articles:")
+            for article in articles:
+                st.write(f"- [{article.get('title', 'No Title')}]({article.get('alternate', [{}])[0].get('href', '')})")
+        else:
+            st.error("Selected board not found.")
+    else:
+        st.error("No boards available.")
+else:
+    st.error("Access token not available.")
