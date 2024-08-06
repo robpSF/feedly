@@ -1,4 +1,14 @@
-requests
+Document
+MSO_THEME_COLOR_INDEX
+OxmlElement
+SL_GET_SM
+WD_ALIGN_VERTICAL
+WD_BREAK
+datetime
+docx
+html2text
+json
 pandas
-python-docx
+requests
+robslib
 streamlit
