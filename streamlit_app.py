@@ -2,8 +2,6 @@
 # https://feedly.com/v3/auth/dev#
 
 
-import SL_GET_SM
-import robslib
 import requests, json
 import pandas as pd
 import docx
