@@ -32,7 +32,7 @@ def get_boards():
         return [], pd.DataFrame()
 
 def get_feedly_articles(board_id):
-    url = f"https://cloud.feedly.com/v3/streams/contents?streamId=user/{feedaccess}/category/{board_id}"
+    url = f"https://cloud.feedly.com/v3/streams/contents?streamId={board_id}"
     headers = {"Authorization": "OAuth " + feedaccess}
     response = requests.get(url, headers=headers)
     st.write("Articles response status code:", response.status_code)
@@ -115,3 +115,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
