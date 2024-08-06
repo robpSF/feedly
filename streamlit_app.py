@@ -23,8 +23,11 @@ def get_feedly_articles(board_id):
     url = f"https://cloud.feedly.com/v3/boards/{board_id}/contents"
     headers = {"Authorization": "OAuth " + feedaccess}
     response = requests.get(url, headers=headers)
+    st.write("Articles response status code:", response.status_code)
+    if response.status_code != 200:
+        st.error("Error fetching articles: " + response.text)
+        return None
     data = json.loads(response.content)
-    st.write("Articles response", response)
     st.json(data)  # This will help us inspect the structure of the articles object
     return data
 
@@ -62,9 +65,10 @@ def main():
     
     if selected_board:
         board_id = df[df["label"] == selected_board]["id"].values[0]
+        st.write("Selected Board ID:", board_id)  # Debugging line to check the board ID
         articles = get_feedly_articles(board_id)
         
-        if 'items' in articles:
+        if articles and 'items' in articles:
             df_articles = pd.json_normalize(articles['items'])
         
             if st.sidebar.button(label="Save file"):
@@ -95,7 +99,7 @@ def main():
                 st.sidebar.text("Files saved: feedly_articles.docx, news_scrape.xlsx, news_scrape.csv")
                 st.header("Done! Files saved")
         else:
-            st.error("No articles found for the selected board.")
+            st.error("No articles found for the selected board or error fetching articles.")
 
 if __name__ == "__main__":
     main()
