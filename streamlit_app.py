@@ -35,29 +35,45 @@ def get_access_token():
         return access_token
     return None
 
+def get_request_limits(headers):
+    # Extracting rate limit information from the response headers
+    limit = headers.get('X-RateLimit-Limit')
+    remaining = headers.get('X-RateLimit-Remaining')
+    reset = headers.get('X-RateLimit-Reset')
+
+    return limit, remaining, reset
+
 def get_boards(access_token):
     headers = {
         'Authorization': f'OAuth {access_token}'
     }
-    response = requests.get(f'{API_URL}/collections', headers=headers)
+    response = requests.get(f'{API_URL}/boards?withEnterprise=True', headers=headers)
+    limit, remaining, reset = get_request_limits(response.headers)
     if response.status_code == 200:
         boards = response.json()
-        return boards
+        return boards, limit, remaining, reset
+    elif response.status_code == 429:
+        st.error("API rate limit reached. Please try again later.")
+        return [], limit, remaining, reset
     else:
         st.error(f"Error fetching boards: {response.status_code} - {response.text}")
-        return []
+        return [], limit, remaining, reset
 
 def get_articles(access_token, board_id):
     headers = {
         'Authorization': f'OAuth {access_token}'
     }
     response = requests.get(f'{API_URL}/streams/contents', headers=headers, params={'streamId': board_id})
+    limit, remaining, reset = get_request_limits(response.headers)
     if response.status_code == 200:
         articles = response.json().get('items', [])
-        return articles
+        return articles, limit, remaining, reset
+    elif response.status_code == 429:
+        st.error("API rate limit reached. Please try again later.")
+        return [], limit, remaining, reset
     else:
         st.error(f"Error fetching articles: {response.status_code} - {response.text}")
-        return []
+        return [], limit, remaining, reset
 
 # Streamlit UI
 st.title("Feedly Board and Articles Viewer")
@@ -70,7 +86,14 @@ else:
 
 if access_token:
     st.write("Fetching boards...")
-    boards = get_boards(access_token)
+    boards, limit, remaining, reset = get_boards(access_token)
+
+    # Display API request count in the sidebar
+    with st.sidebar:
+        st.header("API Request Limits")
+        st.write(f"Limit: {limit}")
+        st.write(f"Remaining: {remaining}")
+        st.write(f"Reset: {reset}")
 
     if boards:
         st.write("Boards fetched successfully.")
@@ -83,7 +106,13 @@ if access_token:
         
         if selected_board:
             st.write(f"Fetching articles from board: {selected_board.get('label', 'No Label')}")
-            articles = get_articles(access_token, selected_board.get('id'))
+            articles, limit, remaining, reset = get_articles(access_token, selected_board.get('id'))
+
+            # Update API request count in the sidebar
+            with st.sidebar:
+                st.write(f"Limit: {limit}")
+                st.write(f"Remaining: {remaining}")
+                st.write(f"Reset: {reset}")
 
             st.write("Articles:")
             for article in articles:
