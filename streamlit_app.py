@@ -21,7 +21,6 @@ def get_boards():
     st.write("Board response", response)
     st.json(data)  # Print the raw response for debugging
     
-    # Ensure the response contains the expected keys
     if "results" in data:
         df = pd.DataFrame(data["results"])
         st.write(df)  # Print the DataFrame for debugging
@@ -31,21 +30,24 @@ def get_boards():
         st.error("No boards found in the response.")
         return [], pd.DataFrame()
 
-def get_feedly_articles(board_id):
-    url = f"https://cloud.feedly.com/v3/streams/contents?streamId={board_id}"
-    headers = {"Authorization": "OAuth " + feedaccess}
-    response = requests.get(url, headers=headers)
-    st.write("Articles response status code:", response.status_code)
+def get_articles(board_id):
+    st.write(board_id)
+    url2 = "https://cloud.feedly.com/v3/streams/contents"
+    params = dict(streamId=board_id)
+    headers = {'Authorization': 'OAuth ' + feedaccess}
+    response = requests.get(url2, params=params, headers=headers)
+    st.write("get articles response", response)
     if response.status_code != 200:
         st.error("Error fetching articles: " + response.text)
-        return None
-    data = response.json()
-    st.json(data)  # This will help us inspect the structure of the articles object
-    return data
+        return []
+    data2 = json.loads(response.content)
+    content_list = data2.get("items", [])
+    st.write(content_list)
+    return content_list
 
 def create_word_document(articles):
     document = Document()
-    for article in articles['items']:
+    for article in articles:
         document.add_heading(article.get('title', 'No Title'), level=1)
         content = article.get('content', {}).get('content', 'No Content')
         document.add_paragraph(content)
@@ -78,10 +80,10 @@ def main():
     if selected_board:
         board_id = df[df["label"] == selected_board]["id"].values[0]
         st.write("Selected Board ID:", board_id)  # Debugging line to check the board ID
-        articles = get_feedly_articles(board_id)
+        articles = get_articles(board_id)
         
-        if articles and 'items' in articles:
-            df_articles = pd.json_normalize(articles['items'])
+        if articles:
+            df_articles = pd.json_normalize(articles)
         
             if st.sidebar.button(label="Save file"):
                 document = create_word_document(articles)
@@ -115,4 +117,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
