@@ -1,7 +1,6 @@
 Document
 MSO_THEME_COLOR_INDEX
 OxmlElement
-SL_GET_SM
 WD_ALIGN_VERTICAL
 WD_BREAK
 datetime
@@ -10,5 +9,4 @@ html2text
 json
 pandas
 requests
-robslib
 streamlit
