@@ -1,11 +1,3 @@
-Document
-MSO_THEME_COLOR_INDEX
-OxmlElement
-WD_ALIGN_VERTICAL
-WD_BREAK
-datetime
-docx
-html2text
 json
 pandas
 requests
