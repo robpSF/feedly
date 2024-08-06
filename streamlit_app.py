@@ -9,25 +9,37 @@ from io import BytesIO
 feedaccess = st.secrets["feedly"]["access_token"]
 
 def get_boards():
-    url = "https://cloud.feedly.com/v3/boards?withEnterprise=True"
+    url = "https://cloud.feedly.com/v3/boards"
     headers = {'Authorization': 'OAuth ' + feedaccess}
     response = requests.get(url, headers=headers)
-    data = json.loads(response.content)
+    
+    if response.status_code != 200:
+        st.error(f"Error fetching boards: {response.text}")
+        return [], pd.DataFrame()
+    
+    data = response.json()
     st.write("Board response", response)
-    df = pd.DataFrame.from_dict(data)
-    st.write(df)
-    boards = df["label"].tolist()
-    return boards, df
+    st.json(data)  # Print the raw response for debugging
+    
+    # Ensure the response contains the expected keys
+    if "results" in data:
+        df = pd.DataFrame(data["results"])
+        st.write(df)  # Print the DataFrame for debugging
+        boards = df["label"].tolist()
+        return boards, df
+    else:
+        st.error("No boards found in the response.")
+        return [], pd.DataFrame()
 
 def get_feedly_articles(board_id):
-    url = f"https://cloud.feedly.com/v3/boards/{board_id}/contents"
+    url = f"https://cloud.feedly.com/v3/streams/contents?streamId=user/{feedaccess}/category/{board_id}"
     headers = {"Authorization": "OAuth " + feedaccess}
     response = requests.get(url, headers=headers)
     st.write("Articles response status code:", response.status_code)
     if response.status_code != 200:
         st.error("Error fetching articles: " + response.text)
         return None
-    data = json.loads(response.content)
+    data = response.json()
     st.json(data)  # This will help us inspect the structure of the articles object
     return data
 
