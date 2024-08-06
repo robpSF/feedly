@@ -24,13 +24,16 @@ def get_feedly_articles(board_id):
     headers = {"Authorization": "OAuth " + feedaccess}
     response = requests.get(url, headers=headers)
     data = json.loads(response.content)
+    st.write("Articles response", response)
+    st.json(data)  # This will help us inspect the structure of the articles object
     return data
 
 def create_word_document(articles):
     document = Document()
     for article in articles['items']:
-        document.add_heading(article['title'], level=1)
-        document.add_paragraph(article['content']['content'])
+        document.add_heading(article.get('title', 'No Title'), level=1)
+        content = article.get('content', {}).get('content', 'No Content')
+        document.add_paragraph(content)
     return document
 
 def save_articles_to_files(df, document):
@@ -60,35 +63,39 @@ def main():
     if selected_board:
         board_id = df[df["label"] == selected_board]["id"].values[0]
         articles = get_feedly_articles(board_id)
-        df_articles = pd.DataFrame(articles['items'])
-
-        if st.sidebar.button(label="Save file"):
-            document = create_word_document(articles)
-            doc_buffer, excel_buffer, csv_buffer = save_articles_to_files(df_articles, document)
-            
-            st.sidebar.download_button(
-                label="Download Word Document",
-                data=doc_buffer,
-                file_name="feedly_articles.docx",
-                mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-            )
-            
-            st.sidebar.download_button(
-                label="Download Excel File",
-                data=excel_buffer,
-                file_name="news_scrape.xlsx",
-                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-            )
-            
-            st.sidebar.download_button(
-                label="Download CSV File",
-                data=csv_buffer,
-                file_name="news_scrape.csv",
-                mime="text/csv"
-            )
-            
-            st.sidebar.text("Files saved: feedly_articles.docx, news_scrape.xlsx, news_scrape.csv")
-            st.header("Done! Files saved")
+        
+        if 'items' in articles:
+            df_articles = pd.json_normalize(articles['items'])
+        
+            if st.sidebar.button(label="Save file"):
+                document = create_word_document(articles)
+                doc_buffer, excel_buffer, csv_buffer = save_articles_to_files(df_articles, document)
+                
+                st.sidebar.download_button(
+                    label="Download Word Document",
+                    data=doc_buffer,
+                    file_name="feedly_articles.docx",
+                    mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                )
+                
+                st.sidebar.download_button(
+                    label="Download Excel File",
+                    data=excel_buffer,
+                    file_name="news_scrape.xlsx",
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                )
+                
+                st.sidebar.download_button(
+                    label="Download CSV File",
+                    data=csv_buffer,
+                    file_name="news_scrape.csv",
+                    mime="text/csv"
+                )
+                
+                st.sidebar.text("Files saved: feedly_articles.docx, news_scrape.xlsx, news_scrape.csv")
+                st.header("Done! Files saved")
+        else:
+            st.error("No articles found for the selected board.")
 
 if __name__ == "__main__":
     main()
