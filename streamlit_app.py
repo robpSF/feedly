@@ -76,13 +76,13 @@ if access_token:
         st.write("Boards fetched successfully.")
         st.write("Debug info: ", boards)  # Add this line to debug the structure of the boards
 
-        board_titles = [board.get('title', 'No Title') for board in boards]
-        selected_board_title = st.selectbox("Select a board:", board_titles)
+        board_labels = [board.get('label', 'No Label') for board in boards]
+        selected_board_label = st.selectbox("Select a board:", board_labels)
 
-        selected_board = next((board for board in boards if board.get('title') == selected_board_title), None)
+        selected_board = next((board for board in boards if board.get('label') == selected_board_label), None)
         
         if selected_board:
-            st.write(f"Fetching articles from board: {selected_board.get('title', 'No Title')}")
+            st.write(f"Fetching articles from board: {selected_board.get('label', 'No Label')}")
             articles = get_articles(access_token, selected_board.get('id'))
 
             st.write("Articles:")
